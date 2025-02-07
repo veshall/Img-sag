@@ -1,3 +1,4 @@
+// filepath: /home/user/Documents/node-repos/Image-Seggregator/src/app.ts
 import fs from "fs/promises";
 import ora from "ora";
 import path from "path";
@@ -14,7 +15,7 @@ const allowedExtensions = new Set([
     ".webp",
 ]);
 
-async function createDirIfNotExists(dir) {
+async function createDirIfNotExists(dir: string): Promise<void> {
     try {
         await fs.access(dir);
     } catch {
@@ -27,7 +28,7 @@ let totalFilesCopied = 0;
 let totalFilesProcessed = 0;
 let totalFilesNotImages = 0;
 
-async function getImageHash(filePath) {
+async function getImageHash(filePath: string): Promise<string | null> {
     try {
         const buffer = await fs.readFile(filePath);
         const hash = (
@@ -40,8 +41,8 @@ async function getImageHash(filePath) {
     }
 }
 
-async function getAllFiles(dir) {
-    let files = [];
+async function getAllFiles(dir: string): Promise<string[]> {
+    let files: string[] = [];
     const items = await fs.readdir(dir, { withFileTypes: true });
     for (const item of items) {
         const fullPath = path.join(dir, item.name);
@@ -54,27 +55,23 @@ async function getAllFiles(dir) {
     return files;
 }
 
-async function processFiles() {
-    const spinner = ora("📷 Scanning images...").start(); // Start spinner
-    const startTime = Date.now(); // Start timer
+async function processFiles(): Promise<void> {
+    const spinner = ora("📷 Scanning images...").start();
+    const startTime = Date.now();
 
     try {
         await createDirIfNotExists(uniqueDir);
         const files = await getAllFiles(sourceDir);
-        const fileHashes = new Map();
+        const fileHashes = new Map<string, string>();
 
-        // Filter only image files
         const imageFiles = files.filter((file) =>
             allowedExtensions.has(path.extname(file).toLowerCase())
         );
         totalFilesProcessed = imageFiles.length;
         totalFilesNotImages = files.length - totalFilesProcessed;
 
-        // Process images sequentially for proper real-time updates
         for (const filePath of imageFiles) {
             const fileName = path.basename(filePath);
-
-            // Update spinner for each file
             spinner.text = `📂 Processing: ${fileName}`;
 
             try {
@@ -82,10 +79,8 @@ async function processFiles() {
                 if (!hash) continue;
 
                 if (fileHashes.has(hash)) {
-                    // Skip duplicates
                     continue;
                 } else {
-                    // Copy unique file to unique directory
                     const uniqueFilePath = path.join(uniqueDir, fileName);
                     await fs.copyFile(filePath, uniqueFilePath);
                     console.log(`Copied unique file: ${fileName}`);
